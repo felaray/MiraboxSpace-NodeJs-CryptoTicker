@@ -1,0 +1,19 @@
+{
+  "name": "crypto-ticker",
+  "version": "1.0.0",
+  "author": "mirabox",
+  "main": "index.js",
+  "description": "Real-time cryptocurrency price ticker for Stream Dock",
+  "scripts": {
+    "build": "ncc build index.js -m -o ./build && node autofile.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^11.3.0",
+    "log4js": "^6.9.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.4"
+  }
+}

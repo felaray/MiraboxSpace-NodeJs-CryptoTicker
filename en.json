@@ -1,0 +1,20 @@
+{
+  "Name": "Binance Ticker",
+  "Description": "Real-time cryptocurrency price ticker from Binance",
+  "Category": "Crypto",
+  "com.mirabox.streamdock.binance.ticker": {
+    "Name": "Binance Ticker",
+    "Tooltip": "Display real-time cryptocurrency prices"
+  },
+  "Localization": {
+    "Trading Pair": "Trading Pair",
+    "Loading...": "Loading...",
+    "Major / 主流幣": "Major",
+    "Popular / 熱門幣": "Popular",
+    "Layer 2 / 二層網路": "Layer 2",
+    "Meme Coins / 迷因幣": "Meme Coins",
+    "Tip:": "Tip:",
+    "Press the button to manually refresh the connection.": "Press the button to manually refresh the connection.",
+    "Price updates in real-time via WebSocket": "Price updates in real-time via WebSocket"
+  }
+}

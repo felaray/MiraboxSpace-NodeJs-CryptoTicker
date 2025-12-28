@@ -1,0 +1,20 @@
+{
+  "Name": "幣安報價",
+  "Description": "即時加密貨幣報價 - 來自幣安",
+  "Category": "加密貨幣",
+  "com.mirabox.streamdock.binance.ticker": {
+    "Name": "幣安報價",
+    "Tooltip": "顯示即時加密貨幣價格"
+  },
+  "Localization": {
+    "Trading Pair": "交易對",
+    "Loading...": "載入中...",
+    "Major / 主流幣": "主流幣",
+    "Popular / 熱門幣": "熱門幣",
+    "Layer 2 / 二層網路": "二層網路",
+    "Meme Coins / 迷因幣": "迷因幣",
+    "Tip:": "提示:",
+    "Press the button to manually refresh the connection.": "按下按鈕可手動刷新連接。",
+    "Price updates in real-time via WebSocket": "透過 WebSocket 即時更新價格"
+  }
+}

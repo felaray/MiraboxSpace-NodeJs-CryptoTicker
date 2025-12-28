@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Binance Ticker - Settings</title>
+    <link href="../utils/bootstrap-icons.css" rel="stylesheet">
+    <link href="../utils/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="sdpi-wrapper p-3" style="display: none;">
+        <!-- 交易對選擇 -->
+        <div class="mb-3">
+            <label class="form-label">
+                <i class="bi bi-currency-bitcoin me-1"></i>
+                Trading Pair
+            </label>
+            <select class="form-select" id="symbolSelect">
+                <optgroup label="Major / 主流幣">
+                    <option value="BTCUSDT">BTC/USDT - Bitcoin</option>
+                    <option value="ETHUSDT">ETH/USDT - Ethereum</option>
+                    <option value="BNBUSDT">BNB/USDT - Binance Coin</option>
+                </optgroup>
+                <optgroup label="Popular / 熱門幣">
+                    <option value="SOLUSDT">SOL/USDT - Solana</option>
+                    <option value="XRPUSDT">XRP/USDT - Ripple</option>
+                    <option value="ADAUSDT">ADA/USDT - Cardano</option>
+                    <option value="DOGEUSDT">DOGE/USDT - Dogecoin</option>
+                    <option value="AVAXUSDT">AVAX/USDT - Avalanche</option>
+                    <option value="DOTUSDT">DOT/USDT - Polkadot</option>
+                    <option value="LINKUSDT">LINK/USDT - Chainlink</option>
+                </optgroup>
+                <optgroup label="Layer 2 / 二層網路">
+                    <option value="MATICUSDT">MATIC/USDT - Polygon</option>
+                    <option value="ARBUSDT">ARB/USDT - Arbitrum</option>
+                    <option value="OPUSDT">OP/USDT - Optimism</option>
+                </optgroup>
+                <optgroup label="Meme Coins / 迷因幣">
+                    <option value="SHIBUSDT">SHIB/USDT - Shiba Inu</option>
+                    <option value="PEPEUSDT">PEPE/USDT - Pepe</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- 連接狀態 -->
+        <div class="mb-3">
+            <div class="alert alert-info py-2 mb-0" role="alert">
+                <i class="bi bi-info-circle me-1"></i>
+                <small>Price updates in real-time via WebSocket</small>
+            </div>
+        </div>
+
+        <!-- 說明 -->
+        <div class="card bg-dark border-secondary">
+            <div class="card-body py-2">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    <strong>Tip:</strong> Press the button to manually refresh the connection.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <script src="../utils/common.js"></script>
+    <script src="../utils/action.js"></script>
+    <script src="index.js"></script>
+</body>
+
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        padding: 8px;
+        background-color: #1a1a2e;
+        color: #eee;
+    }
+
+    .form-select {
+        background-color: #16213e;
+        border-color: #0f3460;
+        color: #eee;
+    }
+
+    .form-select:focus {
+        background-color: #16213e;
+        border-color: #e94560;
+        box-shadow: 0 0 0 0.25rem rgba(233, 69, 96, 0.25);
+        color: #eee;
+    }
+
+    .form-select option {
+        background-color: #16213e;
+        color: #eee;
+    }
+
+    .form-label {
+        color: #94a3b8;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .alert-info {
+        background-color: rgba(14, 165, 233, 0.15);
+        border-color: rgba(14, 165, 233, 0.3);
+        color: #7dd3fc;
+    }
+
+    .card.bg-dark {
+        background-color: #16213e !important;
+    }
+
+    .text-muted {
+        color: #64748b !important;
+    }
+
+    ::-webkit-scrollbar {
+        display: none;
+    }
+
+    optgroup {
+        font-weight: 600;
+        color: #e94560;
+    }
+</style>
+
+</html>
