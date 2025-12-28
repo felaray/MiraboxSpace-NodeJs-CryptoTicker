@@ -8,6 +8,12 @@
   },
   "Localization": {
     "Trading Pair": "交易對",
+    "Chart Range": "圖表範圍",
+    "1 Hour": "1 小時",
+    "6 Hours": "6 小時",
+    "24 Hours": "24 小時",
+    "7 Days": "7 天",
+    "30 Days": "30 天",
     "Loading...": "載入中...",
     "Major / 主流幣": "主流幣",
     "Popular / 熱門幣": "熱門幣",

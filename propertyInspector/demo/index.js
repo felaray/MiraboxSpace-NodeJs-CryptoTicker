@@ -8,21 +8,29 @@ const $back = false;    // 是否自行決定回顯時機
 // DOM 元素
 const $dom = {
     main: $('.sdpi-wrapper'),
-    symbolSelect: $('#symbolSelect')
+    symbolSelect: $('#symbolSelect'),
+    chartRangeSelect: $('#chartRangeSelect')
 };
 
-// 當選擇變更時，發送到插件
+// 當交易對變更時
 $dom.symbolSelect.addEventListener('change', function () {
     const symbol = this.value;
     console.log('Symbol changed to:', symbol);
-
-    // 更新設定 (會自動觸發 setSettings)
     $settings.symbol = symbol;
-
-    // 同時主動發送訊息到插件
     $websocket.sendToPlugin({
         action: 'changeSymbol',
         symbol: symbol
+    });
+});
+
+// 當圖表範圍變更時
+$dom.chartRangeSelect.addEventListener('change', function () {
+    const chartRange = this.value;
+    console.log('Chart range changed to:', chartRange);
+    $settings.chartRange = chartRange;
+    $websocket.sendToPlugin({
+        action: 'changeChartRange',
+        chartRange: chartRange
     });
 });
 
@@ -41,15 +49,13 @@ const $propEvent = {
         if (data.settings?.symbol) {
             $dom.symbolSelect.value = data.settings.symbol;
         }
+        if (data.settings?.chartRange) {
+            $dom.chartRangeSelect.value = data.settings.chartRange;
+        }
     },
 
     // 從插件收到訊息
     sendToPropertyInspector(data) {
         console.log('Message from plugin:', data);
-
-        // 可用於顯示連接狀態等
-        if (data.status) {
-            // 可以在這裡更新 UI 顯示連接狀態
-        }
     }
 };

@@ -1,13 +1,13 @@
 let $websocket, $uuid, $action, $context, $settings, $lang, $FileID = '';
 
-WebSocket.prototype.setGlobalSettings = function(payload) {
+WebSocket.prototype.setGlobalSettings = function (payload) {
     this.send(JSON.stringify({
         event: "setGlobalSettings",
         context: $uuid, payload
     }));
 }
 
-WebSocket.prototype.getGlobalSettings = function() {
+WebSocket.prototype.getGlobalSettings = function () {
     this.send(JSON.stringify({
         event: "getGlobalSettings",
         context: $uuid,
@@ -97,7 +97,7 @@ WebSocket.prototype.saveData = $.debounce(function (payload) {
 const connectSocket = connectElgatoStreamDeckSocket;
 async function connectElgatoStreamDeckSocket(port, uuid, event, app, info) {
     info = JSON.parse(info);
-    $uuid = uuid; $action = info.action; 
+    $uuid = uuid; $action = info.action;
     $context = info.context;
     $websocket = new WebSocket('ws://127.0.0.1:' + port);
     $websocket.onopen = () => $websocket.send(JSON.stringify({ event, uuid }));
@@ -139,13 +139,13 @@ async function connectElgatoStreamDeckSocket(port, uuid, event, app, info) {
     });
     while (walker.nextNode()) {
         console.log(walker.currentNode.data);
-        walker.currentNode.data = $lang[walker.currentNode.data];
+        walker.currentNode.data = $lang[walker.currentNode.data] || walker.currentNode.data;
     }
     // placeholder 特殊处理
     const translate = item => {
         if (item.placeholder?.trim()) {
             console.log(item.placeholder);
-            item.placeholder = $lang[item.placeholder];
+            item.placeholder = $lang[item.placeholder] || item.placeholder;
         }
     };
     $('input', true).forEach(translate);
