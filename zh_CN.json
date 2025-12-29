@@ -6,6 +6,10 @@
     "Name": "幣安報價",
     "Tooltip": "顯示即時加密貨幣價格"
   },
+  "com.mirabox.streamdock.binance.depth": {
+    "Name": "深度圖",
+    "Tooltip": "顯示即時買賣盤深度"
+  },
   "Localization": {
     "Trading Pair": "交易對",
     "Chart Range": "圖表範圍",
@@ -22,6 +26,11 @@
     "Meme Coins / 迷因幣": "迷因幣",
     "Tip:": "提示:",
     "Press the button to manually refresh the connection.": "按下按鈕可手動刷新連接。",
-    "Price updates in real-time via WebSocket": "透過 WebSocket 即時更新價格"
+    "Price updates in real-time via WebSocket": "透過 WebSocket 即時更新價格",
+    "Depth Levels": "深度層級",
+    "5 Levels": "5 檔",
+    "10 Levels": "10 檔",
+    "20 Levels": "20 檔",
+    "Shows real-time bid/ask order book depth.": "顯示即時買賣盤掛單深度。"
   }
 }

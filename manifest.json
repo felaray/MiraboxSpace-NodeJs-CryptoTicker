@@ -22,6 +22,29 @@
       "Tooltip": "Display real-time cryptocurrency prices from Binance",
       "UUID": "com.mirabox.streamdock.binance.ticker",
       "PropertyInspectorPath": "propertyInspector/demo/index.html"
+    },
+    {
+      "Icon": "static/App-logo.png",
+      "Name": "Depth Chart",
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "static/App-logo.png",
+          "TitleAlignment": "middle",
+          "FontSize": "10"
+        }
+      ],
+      "Settings": {
+        "symbol": "BTCUSDT"
+      },
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "Tooltip": "Display real-time order book depth chart",
+      "UUID": "com.mirabox.streamdock.binance.depth",
+      "PropertyInspectorPath": "propertyInspector/depth/index.html"
     }
   ],
   "SDKVersion": 1,

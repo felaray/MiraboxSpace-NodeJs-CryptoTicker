@@ -443,4 +443,298 @@ plugin.ticker = new Actions({
     dialRotate({ context, payload }) { }
 });
 
-log.info('Binance Ticker Plugin with Sparkline initialized');
+// =====================================================
+// Depth Chart Action
+// =====================================================
+
+const depthConnections = {};
+const depthData = {};
+
+/**
+ * 生成深度圖 - 簡化版（買賣壓力條）
+ */
+function generateDepthChart(bids, asks, bgOpacity = 80, symbol = 'BTC') {
+    const canvas = createCanvas(BUTTON_SIZE, BUTTON_SIZE);
+    const ctx = canvas.getContext('2d');
+
+    // 背景
+    const opacity = bgOpacity / 100;
+    ctx.fillStyle = `rgba(26, 26, 46, ${opacity})`;
+    ctx.fillRect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+
+    if (!bids || !asks || bids.length === 0 || asks.length === 0) {
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading...', BUTTON_SIZE / 2, BUTTON_SIZE / 2);
+        return canvas.toDataURL('image/png');
+    }
+
+    // 計算總買賣量
+    const totalBidQty = bids.reduce((sum, b) => sum + parseFloat(b[1]), 0);
+    const totalAskQty = asks.reduce((sum, a) => sum + parseFloat(a[1]), 0);
+    const totalQty = totalBidQty + totalAskQty;
+    const bidRatio = totalBidQty / totalQty;
+
+    // 幣種名稱
+    const coin = symbol.replace('USDT', '');
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(coin, BUTTON_SIZE / 2, 28);
+
+    // 買賣壓力條
+    const barY = 42;
+    const barHeight = 20;
+    const barWidth = BUTTON_SIZE - 24;
+    const barX = 12;
+
+    // 背景條
+    ctx.fillStyle = '#333';
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // 買盤部分（綠色，從左邊開始）
+    const bidWidth = barWidth * bidRatio;
+    ctx.fillStyle = '#00FF88';
+    ctx.fillRect(barX, barY, bidWidth, barHeight);
+
+    // 賣盤部分（紅色，從右邊）
+    ctx.fillStyle = '#FF4444';
+    ctx.fillRect(barX + bidWidth, barY, barWidth - bidWidth, barHeight);
+
+    // 百分比標籤
+    const bidPercent = (bidRatio * 100).toFixed(0);
+    const askPercent = ((1 - bidRatio) * 100).toFixed(0);
+
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#000';
+
+    // 買盤百分比（如果夠寬就顯示在綠色區域內）
+    if (bidRatio > 0.2) {
+        ctx.textAlign = 'left';
+        ctx.fillText(`${bidPercent}%`, barX + 4, barY + 14);
+    }
+
+    // 賣盤百分比
+    if (bidRatio < 0.8) {
+        ctx.textAlign = 'right';
+        ctx.fillText(`${askPercent}%`, barX + barWidth - 4, barY + 14);
+    }
+
+    // 最佳買賣價
+    const bestBid = parseFloat(bids[0][0]);
+    const bestAsk = parseFloat(asks[0][0]);
+
+    // 價格格式化（保留 2 位小數）
+    const formatPrice = (p) => p >= 100 ? p.toFixed(2) : p >= 1 ? p.toFixed(2) : p.toFixed(4);
+
+    // BID 行（標籤 + 價格）
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#00FF88';
+    ctx.textAlign = 'left';
+    ctx.fillText('BID', barX, barY + 45);
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${formatPrice(bestBid)}`, barX + barWidth, barY + 45);
+
+    // ASK 行（標籤 + 價格）
+    ctx.fillStyle = '#FF4444';
+    ctx.textAlign = 'left';
+    ctx.fillText('ASK', barX, barY + 65);
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${formatPrice(bestAsk)}`, barX + barWidth, barY + 65);
+
+    return canvas.toDataURL('image/png');
+}
+
+/**
+ * 連接深度 WebSocket
+ */
+function connectDepth(symbol, context, depthLevel = 10, bgOpacity = 80) {
+    // 關閉舊連線
+    if (depthConnections[context]) {
+        depthConnections[context].close();
+        delete depthConnections[context];
+    }
+
+    depthData[context] = {
+        bids: [],
+        asks: [],
+        symbol: symbol,
+        depthLevel: depthLevel,
+        bgOpacity: bgOpacity
+    };
+
+    // 使用 Partial Book Depth Streams 格式
+    const streamUrl = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth${depthLevel}`;
+    log.info(`Connecting to Depth: ${streamUrl}`);
+
+    const ws = new WebSocket(streamUrl);
+    depthConnections[context] = ws;
+
+    plugin.setTitle(context, `${symbol.replace('USDT', '')}\nDepth...`);
+
+    ws.on('open', () => {
+        log.info(`Depth WebSocket connected for ${symbol}`);
+        ws.pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.ping();
+            }
+        }, PING_INTERVAL);
+    });
+
+    ws.on('message', (data) => {
+        try {
+            const depth = JSON.parse(data.toString());
+            depthData[context].bids = depth.bids || [];
+            depthData[context].asks = depth.asks || [];
+
+            // 調試日誌
+            if (depth.bids && depth.bids.length > 0 && depth.asks && depth.asks.length > 0) {
+                log.info(`Depth data - Best Bid: ${depth.bids[0][0]}, Best Ask: ${depth.asks[0][0]}`);
+            }
+
+            updateDepthButton(context);
+        } catch (err) {
+            log.error('Depth parse error:', err);
+        }
+    });
+
+    ws.on('error', (err) => {
+        log.error(`Depth WebSocket error: ${err.message}`);
+    });
+
+    ws.on('close', () => {
+        log.info(`Depth WebSocket closed for ${symbol}`);
+        if (ws.pingInterval) {
+            clearInterval(ws.pingInterval);
+        }
+        if (depthConnections[context] === ws) {
+            setTimeout(() => {
+                if (depthData[context]) {
+                    connectDepth(depthData[context].symbol, context, depthData[context].depthLevel, depthData[context].bgOpacity);
+                }
+            }, RECONNECT_DELAY);
+        }
+    });
+}
+
+/**
+ * 更新深度圖按鈕
+ */
+function updateDepthButton(context) {
+    const data = depthData[context];
+    if (!data) return;
+
+    const image = generateDepthChart(data.bids, data.asks, data.bgOpacity, data.symbol);
+    plugin.setImage(context, image);
+    plugin.setTitle(context, '');
+}
+
+/**
+ * 關閉深度連線
+ */
+function disconnectDepth(context) {
+    if (depthConnections[context]) {
+        depthConnections[context].close();
+        delete depthConnections[context];
+    }
+    delete depthData[context];
+    log.info(`Disconnected Depth for context: ${context}`);
+}
+
+// Depth Action 定義
+plugin.depth = new Actions({
+    default: {
+        symbol: 'BTCUSDT',
+        depthLevel: 10,
+        bgOpacity: 80
+    },
+
+    async _willAppear({ context, payload }) {
+        log.info('depth: willAppear', context);
+        const symbol = payload.settings?.symbol || this.default.symbol;
+        const depthLevel = payload.settings?.depthLevel || this.default.depthLevel;
+        const bgOpacity = payload.settings?.bgOpacity ?? this.default.bgOpacity;
+        this.data[context] = { symbol, depthLevel, bgOpacity };
+        connectDepth(symbol, context, depthLevel, bgOpacity);
+    },
+
+    _willDisappear({ context }) {
+        log.info('depth: willDisappear', context);
+        disconnectDepth(context);
+    },
+
+    _propertyInspectorDidAppear({ context }) {
+        log.info('Depth Property Inspector appeared for', context);
+    },
+
+    _didReceiveSettings({ context, payload }) {
+        log.info('depth didReceiveSettings', payload);
+        const { symbol, depthLevel, bgOpacity } = payload.settings || {};
+        const current = this.data[context] || {};
+
+        if ((symbol && symbol !== current.symbol) ||
+            (depthLevel && depthLevel !== current.depthLevel) ||
+            (bgOpacity !== undefined && bgOpacity !== current.bgOpacity)) {
+
+            this.data[context] = {
+                symbol: symbol || current.symbol,
+                depthLevel: depthLevel || current.depthLevel,
+                bgOpacity: bgOpacity ?? current.bgOpacity
+            };
+
+            connectDepth(
+                this.data[context].symbol,
+                context,
+                this.data[context].depthLevel,
+                this.data[context].bgOpacity
+            );
+        }
+    },
+
+    sendToPlugin({ payload, context }) {
+        log.info('depth sendToPlugin', payload);
+
+        if (payload.action === 'changeSymbol' && payload.symbol) {
+            this.data[context].symbol = payload.symbol;
+            plugin.setSettings(context, {
+                symbol: payload.symbol,
+                depthLevel: this.data[context].depthLevel,
+                bgOpacity: this.data[context].bgOpacity
+            });
+            connectDepth(payload.symbol, context, this.data[context].depthLevel, this.data[context].bgOpacity);
+        }
+
+        if (payload.action === 'changeDepthLevel' && payload.depthLevel) {
+            this.data[context].depthLevel = payload.depthLevel;
+            plugin.setSettings(context, {
+                symbol: this.data[context].symbol,
+                depthLevel: payload.depthLevel,
+                bgOpacity: this.data[context].bgOpacity
+            });
+            connectDepth(this.data[context].symbol, context, payload.depthLevel, this.data[context].bgOpacity);
+        }
+
+        if (payload.action === 'changeBgOpacity' && payload.bgOpacity !== undefined) {
+            this.data[context].bgOpacity = payload.bgOpacity;
+            depthData[context].bgOpacity = payload.bgOpacity;
+            plugin.setSettings(context, {
+                symbol: this.data[context].symbol,
+                depthLevel: this.data[context].depthLevel,
+                bgOpacity: payload.bgOpacity
+            });
+            updateDepthButton(context);
+        }
+    },
+
+    keyUp({ context, payload }) {
+        log.info('depth keyUp: Manual refresh', context);
+        const { symbol, depthLevel, bgOpacity } = this.data[context] || this.default;
+        connectDepth(symbol, context, depthLevel, bgOpacity);
+    },
+
+    dialDown({ context, payload }) { },
+    dialRotate({ context, payload }) { }
+});
+
+log.info('Binance Ticker Plugin with Sparkline and Depth Chart initialized');
