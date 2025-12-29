@@ -15,11 +15,11 @@ const PING_INTERVAL = 180000; // 3 分鐘
 
 // 圖表範圍配置
 const CHART_RANGES = {
-    '1h': { interval: '5m', limit: 12 },  // 12 x 5m = 1 hour
-    '6h': { interval: '15m', limit: 24 },  // 24 x 15m = 6 hours
-    '24h': { interval: '1h', limit: 24 },  // 24 x 1h = 24 hours
-    '7d': { interval: '8h', limit: 21 },  // 21 x 8h = 7 days
-    '30d': { interval: '1d', limit: 30 }   // 30 x 1d = 30 days
+    '1h': { interval: '5m', limit: 12 },
+    '6h': { interval: '15m', limit: 24 },
+    '24h': { interval: '1h', limit: 24 },
+    '7d': { interval: '8h', limit: 21 },
+    '30d': { interval: '1d', limit: 30 }
 };
 
 // 按鈕尺寸
@@ -118,13 +118,15 @@ function generateSparkline(prices, isUp) {
 
 /**
  * 生成完整按鈕圖片
+ * @param {number} bgOpacity - 背景透明度 (0-100)
  */
-function generateButtonImage(symbol, price, change, prices) {
+function generateButtonImage(symbol, price, change, prices, bgOpacity = 80) {
     const canvas = createCanvas(BUTTON_SIZE, BUTTON_SIZE);
     const ctx = canvas.getContext('2d');
 
-    // 背景
-    ctx.fillStyle = '#1a1a2e';
+    // 背景 - 使用透明度
+    const opacity = bgOpacity / 100;
+    ctx.fillStyle = `rgba(26, 26, 46, ${opacity})`;
     ctx.fillRect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
 
     const isUp = change >= 0;
@@ -172,7 +174,7 @@ function generateButtonImage(symbol, price, change, prices) {
 /**
  * 連接幣安 WebSocket
  */
-function connectBinance(symbol, context, chartRange = '6h') {
+function connectBinance(symbol, context, chartRange = '6h', bgOpacity = 80) {
     // 關閉舊連線
     if (binanceConnections[context]) {
         if (binanceConnections[context].ticker) {
@@ -193,6 +195,7 @@ function connectBinance(symbol, context, chartRange = '6h') {
         change: 0,
         symbol: symbol,
         chartRange: chartRange,
+        bgOpacity: bgOpacity,
         klineInterval: config.interval,
         klineLimit: config.limit
     };
@@ -295,8 +298,8 @@ function connectBinance(symbol, context, chartRange = '6h') {
  */
 function reconnect(context) {
     if (klineData[context]) {
-        const { symbol, chartRange } = klineData[context];
-        connectBinance(symbol, context, chartRange);
+        const { symbol, chartRange, bgOpacity } = klineData[context];
+        connectBinance(symbol, context, chartRange, bgOpacity);
     }
 }
 
@@ -311,7 +314,8 @@ function updateButton(context) {
         data.symbol,
         data.currentPrice,
         data.change,
-        data.prices
+        data.prices,
+        data.bgOpacity
     );
 
     plugin.setImage(context, image);
@@ -344,15 +348,17 @@ plugin.didReceiveGlobalSettings = ({ payload: { settings } }) => {
 plugin.ticker = new Actions({
     default: {
         symbol: 'BTCUSDT',
-        chartRange: '6h'
+        chartRange: '6h',
+        bgOpacity: 80
     },
 
     async _willAppear({ context, payload }) {
         log.info('ticker: willAppear', context);
         const symbol = payload.settings?.symbol || this.default.symbol;
         const chartRange = payload.settings?.chartRange || this.default.chartRange;
-        this.data[context] = { symbol, chartRange };
-        connectBinance(symbol, context, chartRange);
+        const bgOpacity = payload.settings?.bgOpacity ?? this.default.bgOpacity;
+        this.data[context] = { symbol, chartRange, bgOpacity };
+        connectBinance(symbol, context, chartRange, bgOpacity);
     },
 
     _willDisappear({ context }) {
@@ -368,14 +374,26 @@ plugin.ticker = new Actions({
         log.info('didReceiveSettings', payload);
         const symbol = payload.settings?.symbol;
         const chartRange = payload.settings?.chartRange;
+        const bgOpacity = payload.settings?.bgOpacity;
 
-        const currentSymbol = this.data[context]?.symbol;
-        const currentChartRange = this.data[context]?.chartRange;
+        const current = this.data[context] || {};
 
-        if ((symbol && symbol !== currentSymbol) || (chartRange && chartRange !== currentChartRange)) {
-            this.data[context].symbol = symbol || currentSymbol;
-            this.data[context].chartRange = chartRange || currentChartRange;
-            connectBinance(this.data[context].symbol, context, this.data[context].chartRange);
+        if ((symbol && symbol !== current.symbol) ||
+            (chartRange && chartRange !== current.chartRange) ||
+            (bgOpacity !== undefined && bgOpacity !== current.bgOpacity)) {
+
+            this.data[context] = {
+                symbol: symbol || current.symbol,
+                chartRange: chartRange || current.chartRange,
+                bgOpacity: bgOpacity ?? current.bgOpacity
+            };
+
+            connectBinance(
+                this.data[context].symbol,
+                context,
+                this.data[context].chartRange,
+                this.data[context].bgOpacity
+            );
         }
     },
 
@@ -386,26 +404,39 @@ plugin.ticker = new Actions({
             this.data[context].symbol = payload.symbol;
             plugin.setSettings(context, {
                 symbol: payload.symbol,
-                chartRange: this.data[context].chartRange
+                chartRange: this.data[context].chartRange,
+                bgOpacity: this.data[context].bgOpacity
             });
-            connectBinance(payload.symbol, context, this.data[context].chartRange);
+            connectBinance(payload.symbol, context, this.data[context].chartRange, this.data[context].bgOpacity);
         }
 
         if (payload.action === 'changeChartRange' && payload.chartRange) {
             this.data[context].chartRange = payload.chartRange;
             plugin.setSettings(context, {
                 symbol: this.data[context].symbol,
-                chartRange: payload.chartRange
+                chartRange: payload.chartRange,
+                bgOpacity: this.data[context].bgOpacity
             });
-            connectBinance(this.data[context].symbol, context, payload.chartRange);
+            connectBinance(this.data[context].symbol, context, payload.chartRange, this.data[context].bgOpacity);
+        }
+
+        if (payload.action === 'changeBgOpacity' && payload.bgOpacity !== undefined) {
+            this.data[context].bgOpacity = payload.bgOpacity;
+            klineData[context].bgOpacity = payload.bgOpacity;
+            plugin.setSettings(context, {
+                symbol: this.data[context].symbol,
+                chartRange: this.data[context].chartRange,
+                bgOpacity: payload.bgOpacity
+            });
+            // 只更新圖片，不需要重新連接
+            updateButton(context);
         }
     },
 
     keyUp({ context, payload }) {
         log.info('keyUp: Manual refresh', context);
-        const symbol = this.data[context]?.symbol || this.default.symbol;
-        const chartRange = this.data[context]?.chartRange || this.default.chartRange;
-        connectBinance(symbol, context, chartRange);
+        const { symbol, chartRange, bgOpacity } = this.data[context] || this.default;
+        connectBinance(symbol, context, chartRange, bgOpacity);
     },
 
     dialDown({ context, payload }) { },

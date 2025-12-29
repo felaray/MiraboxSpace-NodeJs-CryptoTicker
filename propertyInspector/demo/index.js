@@ -9,7 +9,9 @@ const $back = false;    // 是否自行決定回顯時機
 const $dom = {
     main: $('.sdpi-wrapper'),
     symbolSelect: $('#symbolSelect'),
-    chartRangeSelect: $('#chartRangeSelect')
+    chartRangeSelect: $('#chartRangeSelect'),
+    bgOpacityRange: $('#bgOpacityRange'),
+    opacityValue: $('#opacityValue')
 };
 
 // 當交易對變更時
@@ -34,6 +36,18 @@ $dom.chartRangeSelect.addEventListener('change', function () {
     });
 });
 
+// 當背景透明度變更時
+$dom.bgOpacityRange.addEventListener('input', function () {
+    const bgOpacity = parseInt(this.value);
+    $dom.opacityValue.textContent = bgOpacity + '%';
+    console.log('Background opacity changed to:', bgOpacity);
+    $settings.bgOpacity = bgOpacity;
+    $websocket.sendToPlugin({
+        action: 'changeBgOpacity',
+        bgOpacity: bgOpacity
+    });
+});
+
 // 事件處理
 const $propEvent = {
     // 收到全局設定
@@ -45,12 +59,15 @@ const $propEvent = {
     didReceiveSettings(data) {
         console.log('Received settings:', data);
 
-        // 設定選單的值
         if (data.settings?.symbol) {
             $dom.symbolSelect.value = data.settings.symbol;
         }
         if (data.settings?.chartRange) {
             $dom.chartRangeSelect.value = data.settings.chartRange;
+        }
+        if (data.settings?.bgOpacity !== undefined) {
+            $dom.bgOpacityRange.value = data.settings.bgOpacity;
+            $dom.opacityValue.textContent = data.settings.bgOpacity + '%';
         }
     },
 
