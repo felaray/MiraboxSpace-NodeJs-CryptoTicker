@@ -15,6 +15,8 @@ const PING_INTERVAL = 180000; // 3 分鐘
 
 // 圖表範圍配置
 const CHART_RANGES = {
+    '15m': { interval: '1m', limit: 15 },
+    '30m': { interval: '1m', limit: 30 },
     '1h': { interval: '5m', limit: 12 },
     '6h': { interval: '15m', limit: 24 },
     '24h': { interval: '1h', limit: 24 },
